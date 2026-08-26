@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -37,13 +36,12 @@
     </div>
 
     <script>
-        // --- 1. KONEKSIKAN KE SUPABASE ---
-        const supabaseUrl = 'https://blvfmytswkxfrgcwpaye.supabase.co/rest/v1/'; 
+        // --- 1. KONEKSIKAN KE SUPABASE (Diperbaiki tanpa /rest/v1/) ---
+        const supabaseUrl = 'https://blvfmytswkxfrgcwpaye.supabase.co'; 
         const supabaseKey = 'sb_publishable_ilaOVzKJ-fnePlsXvIk6ZQ_TQE3Bmcl'; 
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        // --- 2. DATA DUMMY PEGAWAI (Contoh 3 orang) ---
-        // Nanti Anda bisa memasukkan ratusan data pegawai Anda di sini
+        // --- 2. DATA DUMMY PEGAWAI ---
         const daftarPegawai = [
             { nip: "196906012000121007", nama: "Hery Marsudi J, SP, MP", unit: "UPT Balai Benih Pembantu Tanaman Pangan" },
             { nip: "197611192010012015", nama: "Muliani, SP", unit: "UPT Balai Benih Pembantu Tanaman Pangan" },
@@ -55,17 +53,23 @@
             const tbody = document.getElementById('tabel-pegawai');
             tbody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-gray-400">Memuat data...</td></tr>';
 
-            // Tarik data URL dokumen yang sudah tersimpan di database
-            const { data: dataSurvey, error } = await supabase.from('DataSurvey').select('*');
+            // Ambil data dari Supabase (dengan pengaman agar tidak error jika tabel kosong)
+            let dataSurvey = [];
+            try {
+                const response = await supabase.from('DataSurvey').select('*');
+                if (response.data) {
+                    dataSurvey = response.data;
+                }
+            } catch (err) {
+                console.log("Catatan: Belum ada data di database atau tabel kosong.");
+            }
             
             tbody.innerHTML = ''; // Kosongkan loading
 
             daftarPegawai.forEach(pegawai => {
-                // Cek apakah pegawai ini sudah punya file_url di database
                 const catatanDatabase = dataSurvey?.find(d => d.nip === pegawai.nip);
                 const fileUrl = catatanDatabase ? catatanDatabase.file_url : null;
 
-                // Tentukan tombol apa yang muncul (Upload atau Link Download)
                 let aksiHtml = '';
                 if (fileUrl) {
                     aksiHtml = `<a href="${fileUrl}" target="_blank" class="bg-blue-100 text-blue-700 font-bold px-4 py-2 rounded-lg text-xs hover:bg-blue-200 transition-colors">Lihat Dokumen</a>`;
@@ -78,7 +82,6 @@
                     `;
                 }
 
-                // Cetak baris tabel
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-gray-50";
                 tr.innerHTML = `
@@ -96,7 +99,6 @@
             const file = event.target.files[0];
             if (!file) return;
 
-            // Membatasi ukuran maksimal 2MB
             if (file.size > 2 * 1024 * 1024) {
                 return Swal.fire('Terlalu Besar!', 'Maksimal ukuran file adalah 2MB.', 'error');
             }
@@ -104,26 +106,22 @@
             try {
                 Swal.fire({ title: 'Mengunggah...', text: 'Mohon tunggu sebentar', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-                // Bersihkan nama file agar tidak ada spasi yang bikin error URL
                 const fileExt = file.name.split('.').pop();
                 const namaFileAman = `${nip}_${Date.now()}.${fileExt}`;
 
-                // 1. Upload ke Ember Storage 'dokumen-survey'
                 const { data: uploadData, error: uploadError } = await supabase.storage.from('dokumen-survey').upload(namaFileAman, file);
                 if (uploadError) throw uploadError;
 
-                // 2. Ambil URL Publik dari file yang barusan diupload
                 const { data: publicUrlData } = supabase.storage.from('dokumen-survey').getPublicUrl(namaFileAman);
                 const urlDokumen = publicUrlData.publicUrl;
 
-                // 3. Simpan URL tersebut ke Database Tabel 'DataSurvey'
                 const { error: dbError } = await supabase.from('DataSurvey').upsert([
                     { nip: nip, nama: nama, file_url: urlDokumen }
                 ]);
                 if (dbError) throw dbError;
 
                 Swal.fire('Berhasil!', 'Dokumen telah tersimpan.', 'success');
-                renderTabel(); // Segarkan tabel otomatis
+                renderTabel();
 
             } catch (err) {
                 console.error(err);
@@ -131,10 +129,7 @@
             }
         }
 
-        // Jalankan fungsi tampilkan tabel saat halaman pertama kali dibuka
         window.onload = renderTabel;
     </script>
 </body>
-
-
 </html>
