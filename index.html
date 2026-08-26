@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Survey & Upload Dokumen - Distanak</title>
+    
+    <!-- Memanggil Tailwind CSS untuk Desain -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Memanggil SweetAlert2 untuk Notifikasi Pop-up -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Memanggil Mesin Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-50 p-4 md:p-10 font-sans">
+
+    <div class="max-w-4xl mx-auto bg-white p-6 rounded-3xl shadow-sm border-t-4 border-green-600">
+        <h2 class="text-2xl font-black text-gray-800 mb-2">Daftar Responden Survei Kesiapan Sistem Merit</h2>
+        <p class="text-gray-500 text-sm mb-6">Silakan unggah foto skrinsut bukti telah mengisi survey</p>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-gray-100 text-xs uppercase text-gray-500 font-bold">
+                    <tr>
+                        <th class="p-4 rounded-tl-xl">NIP</th>
+                        <th class="p-4">Nama Pegawai</th>
+                        <th class="p-4">Unit Kerja</th>
+                        <th class="p-4 rounded-tr-xl text-center">Status / Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="tabel-pegawai" class="divide-y text-sm text-gray-700">
+                    <!-- Data akan dimunculkan oleh Javascript di sini -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. KONEKSIKAN KE SUPABASE ---
+        const supabaseUrl = 'sb_publishable_ilaOVzKJ-fnePlsXvIk6ZQ_TQE3Bmcl'; 
+        const supabaseKey = 'sb_secret_K418QpDpeZm99Wh5DSVY6w_EPOu1tuR'; 
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // --- 2. DATA DUMMY PEGAWAI (Contoh 3 orang) ---
+        // Nanti Anda bisa memasukkan ratusan data pegawai Anda di sini
+        const daftarPegawai = [
+            { nip: "196906012000121007", nama: "Hery Marsudi J, SP, MP", unit: "UPT Balai Benih Pembantu Tanaman Pangan" },
+            { nip: "197611192010012015", nama: "Muliani, SP", unit: "UPT Balai Benih Pembantu Tanaman Pangan" },
+            { nip: "197308011997031003", nama: "Suharyono, SP", unit: "UPT Balai Benih Pembantu Tanaman Pangan" }
+        ];
+
+        // --- 3. FUNGSI UNTUK MENAMPILKAN TABEL ---
+        async function renderTabel() {
+            const tbody = document.getElementById('tabel-pegawai');
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-gray-400">Memuat data...</td></tr>';
+
+            // Tarik data URL dokumen yang sudah tersimpan di database
+            const { data: dataSurvey, error } = await supabase.from('DataSurvey').select('*');
+            
+            tbody.innerHTML = ''; // Kosongkan loading
+
+            daftarPegawai.forEach(pegawai => {
+                // Cek apakah pegawai ini sudah punya file_url di database
+                const catatanDatabase = dataSurvey?.find(d => d.nip === pegawai.nip);
+                const fileUrl = catatanDatabase ? catatanDatabase.file_url : null;
+
+                // Tentukan tombol apa yang muncul (Upload atau Link Download)
+                let aksiHtml = '';
+                if (fileUrl) {
+                    aksiHtml = `<a href="${fileUrl}" target="_blank" class="bg-blue-100 text-blue-700 font-bold px-4 py-2 rounded-lg text-xs hover:bg-blue-200 transition-colors">Lihat Dokumen</a>`;
+                } else {
+                    aksiHtml = `
+                        <label class="cursor-pointer bg-green-500 text-white font-bold px-4 py-2 rounded-lg text-xs hover:bg-green-600 transition-colors">
+                            Pilih File
+                            <input type="file" class="hidden" onchange="uploadFile(event, '${pegawai.nip}', '${pegawai.nama}')" accept=".pdf, .jpg, .png" />
+                        </label>
+                    `;
+                }
+
+                // Cetak baris tabel
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50";
+                tr.innerHTML = `
+                    <td class="p-4 font-mono text-xs">${pegawai.nip}</td>
+                    <td class="p-4 font-bold">${pegawai.nama}</td>
+                    <td class="p-4 text-xs">${pegawai.unit}</td>
+                    <td class="p-4 text-center">${aksiHtml}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- 4. FUNGSI UPLOAD FILE KE SUPABASE ---
+        async function uploadFile(event, nip, nama) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Membatasi ukuran maksimal 2MB
+            if (file.size > 2 * 1024 * 1024) {
+                return Swal.fire('Terlalu Besar!', 'Maksimal ukuran file adalah 2MB.', 'error');
+            }
+
+            try {
+                Swal.fire({ title: 'Mengunggah...', text: 'Mohon tunggu sebentar', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                // Bersihkan nama file agar tidak ada spasi yang bikin error URL
+                const fileExt = file.name.split('.').pop();
+                const namaFileAman = `${nip}_${Date.now()}.${fileExt}`;
+
+                // 1. Upload ke Ember Storage 'dokumen-survey'
+                const { data: uploadData, error: uploadError } = await supabase.storage.from('dokumen-survey').upload(namaFileAman, file);
+                if (uploadError) throw uploadError;
+
+                // 2. Ambil URL Publik dari file yang barusan diupload
+                const { data: publicUrlData } = supabase.storage.from('dokumen-survey').getPublicUrl(namaFileAman);
+                const urlDokumen = publicUrlData.publicUrl;
+
+                // 3. Simpan URL tersebut ke Database Tabel 'DataSurvey'
+                const { error: dbError } = await supabase.from('DataSurvey').upsert([
+                    { nip: nip, nama: nama, file_url: urlDokumen }
+                ]);
+                if (dbError) throw dbError;
+
+                Swal.fire('Berhasil!', 'Dokumen telah tersimpan.', 'success');
+                renderTabel(); // Segarkan tabel otomatis
+
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Gagal!', 'Terjadi kesalahan saat mengunggah.', 'error');
+            }
+        }
+
+        // Jalankan fungsi tampilkan tabel saat halaman pertama kali dibuka
+        window.onload = renderTabel;
+    </script>
+</body>
+</html>
