@@ -2,16 +2,16 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=1024">
     <title>Pengisian Survey Kesiapan Sistem Merit - Distanak Kukar</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-gray-50 p-4 md:p-10 font-sans">
+<body class="bg-gray-50 p-6 font-sans">
 
-    <div class="max-w-5xl mx-auto bg-white p-6 rounded-3xl shadow-sm border-t-4 border-green-600">
+    <div class="max-w-5xl min-w-[1000px] mx-auto bg-white p-6 rounded-3xl shadow-sm border-t-4 border-green-600">
 
         <div class="mb-6 p-5 bg-green-50 border border-green-200 rounded-2xl text-base text-gray-700">
             <h2 class="font-bold text-red-500 mb-2 underline">CARA MENGISI SURVEY :</h2>
@@ -20,15 +20,14 @@
                 <li>Masuk menggunakan akun SSO BKN (akun MyASN masing-masing pegawai)</li>
                 <li>Klik "Survei & Kuis" pada menu sisi kiri layar </li>
                 <li>Pada Tab "Survei", pilih "Survei Kepuasan dan Keterikatan Pegawai ASN".</li>
-                <li>Silahkan baca petunjuk pengisian survei dan isi seluruh pertanyaan yang tersedia.</li>
+                <li>Silahkan baca pentunjuk pengisian survei dan isi seluruh pertanyaan yang tersedia.</li>
                 <li>Setelah klik Kirim Jawaban akan muncul notifikasi bahwa jawaban berhasil disimpan</li>
                 <li>Segera di screenshot notifikasi tersebut untuk kemudian diunggah pada tabel dibawah</li>
             </ol>
             <div class="pt-3 border-t border-green-200 text-base text-gray-600">
                 <span class="font-semibold">Dasar kegiatan pengisian survey : </span> 
-                
-                              <a href="https://s.id/surveydistanak" target="_blank" class="text-blue-600 underline font-medium ml-1">Surat edaran Sekda No. B-634/BKPSDM/400.3.5.3/08/2026</a>
-                              <p class="font-semibold">Batas waktu pengisian survey : paling lambat tanggal 17 September 2026, pukul 15.00 WITA </p> 
+                <a href="https://s.id/surveydistanak" target="_blank" class="text-blue-600 underline font-medium ml-1">Surat edaran Sekda No. B-634/BKPSDM/400.3.5.3/08/2026</a>
+                <p class="font-semibold">Batas waktu pengisian survey : paling lambat tanggal 17 September 2026, pukul 15.00 WITA </p> 
             </div>
         </div>
 
@@ -53,12 +52,11 @@
         </div>
     </div>
 
-<footer class="text-center py-6 text-xs text-gray-500">
+    <footer class="text-center py-6 text-xs text-gray-500">
         Build by : <a href="https://id.linkedin.com/in/awang-faisyal-rachman" target="_blank" class="text-green-700 font-bold hover:underline">awangfaisal</a>
     </footer>
     
     <script>
-        
         // --- KONEKSI SUPABASE ---
         const supabaseUrl = 'https://blvfmytswkxfrgcwpaye.supabase.co'; 
         const supabaseKey = 'sb_publishable_ilaOVzKJ-fnePlsXvIk6ZQ_TQE3Bmcl'; 
@@ -525,7 +523,6 @@
             let lastUnit = '';
 
             daftarPegawai.forEach(pegawai => {
-                // Munculkan baris pemisah / sub-header otomatis saat unit kerja berganti
                 if (pegawai.unit !== lastUnit) {
                     lastUnit = pegawai.unit;
                     const trHeader = document.createElement('tr');
