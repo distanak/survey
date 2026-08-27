@@ -57,6 +57,7 @@
         const supabaseKey = 'sb_publishable_ilaOVzKJ-fnePlsXvIk6ZQ_TQE3Bmcl'; 
         const clientSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+        // Daftar seluruh pegawai (441 Pegawai dari data CSV)
         const daftarPegawai = [
             { nip: "197208251997031004", nama: "Moh.Rifani, S.Hut", unit: "Kepala Dinas" },
             { nip: "197704192008011015", nama: "Rudi Afriandi, S.P", unit: "Sekretariat - Subag Umum dan Ketatalaksanaan" },
@@ -72,13 +73,13 @@
             { nip: "198206042008011017", nama: "Tursino Hadi", unit: "Sekretariat - Subag Umum dan Ketatalaksanaan" },
             { nip: "198407062010011025", nama: "Fahim Panartion", unit: "Sekretariat - Subag Umum dan Ketatalaksanaan" },
             { nip: "196906142007011041", nama: "Kastam", unit: "Sekretariat - Subag Umum dan Ketatalaksanaan" },
-            { nip: "199007262025211029", nama: "Tria Ahmadi, S.E", unit: "Sekretariat - Subag Umum dan Ketatalaksanaan" },
-            { nip: "198312142025211018", nama: "Saiful Arif, S.Sos", unit: "Sekretariat - Subag Umum dan Ketatalaksanaan" },
-            { nip: "198112272025212016", nama: "Rima Rusmala Dewi, S.P", unit: "Sekretariat - Subag Umum dan Ketatalaksanaan" },
-            { nip: "199507052025212030", nama: "Nurul Istiqomah, S.E", unit: "Sekretariat - Subag Umum dan Ketatalaksanaan" },
-            { nip: "198811172025211020", nama: "M.Abu Bakar, S.Sos", unit: "Sekretariat - Subag Umum dan Ketatalaksanaan" },
-            { nip: "198803072025212029", nama: "Asmida Nur Santi, S.E", unit: "Sekretariat - Subag Umum dan Ketatalaksanaan" },
-            { nip: "198903292025211022", nama: "Budi Arfiandi, S.Sos", unit: "Sekretariat - Subag Umum dan Ketatalaksanaan" },
+            { nip: "199007262025211029", nama: "Tria Ahmadi, S.E", unit: "Sekretariat- Subag Umum dan Ketatalaksanaan" },
+            { nip: "198312142025211018", nama: "Saiful Arif, S.Sos", unit: "Sekretariat- Subag Umum dan Ketatalaksanaan" },
+            { nip: "198112272025212016", nama: "Rima Rusmala Dewi, S.P", unit: "Sekretariat- Subag Umum dan Ketatalaksanaan" },
+            { nip: "199507052025212030", nama: "Nurul Istiqomah, S.E", unit: "Sekretariat- Subag Umum dan Ketatalaksanaan" },
+            { nip: "198811172025211020", nama: "M.Abu Bakar, S.Sos", unit: "Sekretariat- Subag Umum dan Ketatalaksanaan" },
+            { nip: "198803072025212029", nama: "Asmida Nur Santi, S.E", unit: "Sekretariat- Subag Umum dan Ketatalaksanaan" },
+            { nip: "198903292025211022", nama: "Budi Arfiandi, S.Sos", unit: "Sekretariat- Subag Umum dan Ketatalaksanaan" },
             { nip: "198106292006041007", nama: "Abdul Gafur, S.Sos", unit: "Sekretariat - Subag Perencanaan dan Keuangan" },
             { nip: "198308062009032008", nama: "Siti Rahmah, S.Pt", unit: "Sekretariat - Subag Perencanaan dan Keuangan" },
             { nip: "197801082006041014", nama: "Rahmadi", unit: "Sekretariat - Subag Perencanaan dan Keuangan" },
@@ -201,8 +202,22 @@
             }
 
             tbody.innerHTML = '';
+            let lastUnit = '';
 
             daftarPegawai.forEach(pegawai => {
+                // Munculkan garis sub-header pembatas otomatis jika unit kerja berbeda
+                if (pegawai.unit !== lastUnit) {
+                    lastUnit = pegawai.unit;
+                    const trHeader = document.createElement('tr');
+                    trHeader.className = "bg-green-100 font-bold text-green-900 border-t-2 border-green-300";
+                    trHeader.innerHTML = `
+                        <td colspan="5" class="p-3 text-sm tracking-wide">
+                            📂 ${lastUnit}
+                        </td>
+                    `;
+                    tbody.appendChild(trHeader);
+                }
+
                 const catatanDatabase = dataSurvey?.find(d => d.nip === pegawai.nip);
                 const fileUrl = catatanDatabase ? catatanDatabase.file_url : null;
 
@@ -210,7 +225,6 @@
                 let aksiHtml = '';
 
                 if (fileUrl) {
-                    // Jika sudah unggah: Tampilkan badge Sudah Mengisi dan tombol Lihat saja (tanpa hapus)
                     statusHtml = `<span class="bg-green-100 text-green-700 font-bold px-3 py-1 rounded-full text-xs">Sudah Mengisi</span>`;
                     aksiHtml = `
                         <div class="flex items-center justify-center gap-2">
@@ -218,7 +232,6 @@
                         </div>
                     `;
                 } else {
-                    // Jika belum unggah: Tampilkan badge Belum Mengisi dan tombol Pilih File
                     statusHtml = `<span class="bg-gray-100 text-gray-500 font-bold px-3 py-1 rounded-full text-xs">Belum Mengisi</span>`;
                     aksiHtml = `
                         <label class="cursor-pointer bg-green-500 text-white font-bold px-4 py-2 rounded-lg text-xs hover:bg-green-600 transition-colors inline-block">
@@ -229,11 +242,11 @@
                 }
 
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-gray-50";
+                tr.className = "hover:bg-gray-50 border-b border-gray-100";
                 tr.innerHTML = `
-                    <td class="p-4 font-mono text-xs">${pegawai.nip}</td>
+                    <td class="p-4 font-mono text-xs pl-6">${pegawai.nip}</td>
                     <td class="p-4 font-bold">${pegawai.nama}</td>
-                    <td class="p-4 text-xs">${pegawai.unit}</td>
+                    <td class="p-4 text-xs text-gray-500">${pegawai.unit}</td>
                     <td class="p-4 text-center">${statusHtml}</td>
                     <td class="p-4 text-center">${aksiHtml}</td>
                 `;
