@@ -4,12 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal Survey & Upload Dokumen - Distanak</title>
-    
-    <!-- Memanggil Tailwind CSS untuk Desain -->
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Memanggil SweetAlert2 untuk Notifikasi Pop-up -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Memanggil Mesin Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-gray-50 p-4 md:p-10 font-sans">
@@ -36,48 +33,50 @@
     </div>
 
     <script>
-        // --- 1. KONEKSIKAN KE SUPABASE (Diperbaiki tanpa /rest/v1/) ---
+        // --- KONEKSI SUPABASE ---
         const supabaseUrl = 'https://blvfmytswkxfrgcwpaye.supabase.co'; 
         const supabaseKey = 'sb_publishable_ilaOVzKJ-fnePlsXvIk6ZQ_TQE3Bmcl'; 
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        const clientSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        // --- 2. DATA DUMMY PEGAWAI ---
         const daftarPegawai = [
             { nip: "196906012000121007", nama: "Hery Marsudi J, SP, MP", unit: "UPT Balai Benih Pembantu Tanaman Pangan" },
             { nip: "197611192010012015", nama: "Muliani, SP", unit: "UPT Balai Benih Pembantu Tanaman Pangan" },
             { nip: "197308011997031003", nama: "Suharyono, SP", unit: "UPT Balai Benih Pembantu Tanaman Pangan" }
         ];
 
-        // --- 3. FUNGSI UNTUK MENAMPILKAN TABEL ---
         async function renderTabel() {
             const tbody = document.getElementById('tabel-pegawai');
             tbody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-gray-400">Memuat data...</td></tr>';
 
-            // Ambil data dari Supabase (dengan pengaman agar tidak error jika tabel kosong)
             let dataSurvey = [];
             try {
-                const response = await supabase.from('DataSurvey').select('*');
-                if (response.data) {
-                    dataSurvey = response.data;
-                }
+                const response = await clientSupabase.from('DataSurvey').select('*');
+                if (response.data) dataSurvey = response.data;
             } catch (err) {
-                console.log("Catatan: Belum ada data di database atau tabel kosong.");
+                console.log("Database kosong/belum siap");
             }
-            
-            tbody.innerHTML = ''; // Kosongkan loading
+
+            tbody.innerHTML = '';
 
             daftarPegawai.forEach(pegawai => {
                 const catatanDatabase = dataSurvey?.find(d => d.nip === pegawai.nip);
                 const fileUrl = catatanDatabase ? catatanDatabase.file_url : null;
 
-                let aksiHtml = '';
+               let aksiHtml = '';
                 if (fileUrl) {
-                    aksiHtml = `<a href="${fileUrl}" target="_blank" class="bg-blue-100 text-blue-700 font-bold px-4 py-2 rounded-lg text-xs hover:bg-blue-200 transition-colors">Lihat Dokumen</a>`;
-                } else {
+                    // Jika sudah ada file, tampilkan tombol LIHAT dan HAPUS
                     aksiHtml = `
-                        <label class="cursor-pointer bg-green-500 text-white font-bold px-4 py-2 rounded-lg text-xs hover:bg-green-600 transition-colors">
+                        <div class="flex items-center justify-center gap-2">
+                            <a href="${fileUrl}" target="_blank" class="bg-blue-100 text-blue-700 font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-blue-200 transition-colors">Lihat</a>
+                            <button onclick="hapusFile('${pegawai.nip}', '${fileUrl}')" class="bg-red-100 text-red-600 font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-red-200 transition-colors">Hapus</button>
+                        </div>
+                    `;
+                } else {
+                    // Jika belum ada file, tampilkan tombol Pilih File
+                    aksiHtml = `
+                        <label class="cursor-pointer bg-green-500 text-white font-bold px-4 py-2 rounded-lg text-xs hover:bg-green-600 transition-colors inline-block">
                             Pilih File
-                            <input type="file" class="hidden" onchange="uploadFile(event, '${pegawai.nip}', '${pegawai.nama}')" accept=".pdf, .jpg, .png" />
+                            <input type="file" class="hidden" onchange="uploadFile(event, '${pegawai.nip}', '${pegawai.nama}')" accept=".pdf, .jpg, .jpeg, .png" />
                         </label>
                     `;
                 }
@@ -94,7 +93,6 @@
             });
         }
 
-        // --- 4. FUNGSI UPLOAD FILE KE SUPABASE ---
         async function uploadFile(event, nip, nama) {
             const file = event.target.files[0];
             if (!file) return;
@@ -109,13 +107,13 @@
                 const fileExt = file.name.split('.').pop();
                 const namaFileAman = `${nip}_${Date.now()}.${fileExt}`;
 
-                const { data: uploadData, error: uploadError } = await supabase.storage.from('dokumen-survey').upload(namaFileAman, file);
+                const { error: uploadError } = await clientSupabase.storage.from('dokumen-survey').upload(namaFileAman, file);
                 if (uploadError) throw uploadError;
 
-                const { data: publicUrlData } = supabase.storage.from('dokumen-survey').getPublicUrl(namaFileAman);
+                const { data: publicUrlData } = clientSupabase.storage.from('dokumen-survey').getPublicUrl(namaFileAman);
                 const urlDokumen = publicUrlData.publicUrl;
 
-                const { error: dbError } = await supabase.from('DataSurvey').upsert([
+                const { error: dbError } = await clientSupabase.from('DataSurvey').upsert([
                     { nip: nip, nama: nama, file_url: urlDokumen }
                 ]);
                 if (dbError) throw dbError;
@@ -128,6 +126,8 @@
                 Swal.fire('Gagal!', 'Terjadi kesalahan saat mengunggah.', 'error');
             }
         }
+
+        
 
         window.onload = renderTabel;
     </script>
