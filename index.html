@@ -85,12 +85,11 @@
                 let aksiHtml = '';
 
                 if (fileUrl) {
-                    // Jika sudah unggah: Tampilkan badge Sudah Mengisi, tombol Lihat, dan tombol Hapus
+                    // Jika sudah unggah: Tampilkan badge Sudah Mengisi dan tombol Lihat saja (tanpa hapus)
                     statusHtml = `<span class="bg-green-100 text-green-700 font-bold px-3 py-1 rounded-full text-xs">Sudah Mengisi</span>`;
                     aksiHtml = `
                         <div class="flex items-center justify-center gap-2">
-                            <a href="${fileUrl}" target="_blank" class="bg-blue-100 text-blue-700 font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-blue-200 transition-colors">Lihat</a>
-                            <button onclick="hapusFile('${pegawai.nip}')" class="bg-red-100 text-red-600 font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-red-200 transition-colors">Hapus</button>
+                            <a href="${fileUrl}" target="_blank" class="bg-blue-100 text-blue-700 font-bold px-4 py-2 rounded-lg text-xs hover:bg-blue-200 transition-colors inline-block">Lihat Dokumen</a>
                         </div>
                     `;
                 } else {
@@ -148,37 +147,6 @@
             } catch (err) {
                 console.error(err);
                 Swal.fire('Gagal!', 'Terjadi kesalahan saat mengunggah.', 'error');
-            }
-        }
-
-        async function hapusFile(nip) {
-            const result = await Swal.fire({
-                title: 'Hapus Dokumen?',
-                text: "Status akan direset menjadi belum mengisi dan Anda bisa mengunggah ulang file baru.",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Ya, Hapus!',
-                cancelButtonText: 'Batal'
-            });
-
-            if (!result.isConfirmed) return;
-
-            try {
-                Swal.fire({ title: 'Menghapus...', text: 'Mohon tunggu sebentar', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-                const { error: dbError } = await clientSupabase.from('DataSurvey').upsert([
-                    { nip: nip, file_url: null }
-                ]);
-                if (dbError) throw dbError;
-
-                Swal.fire('Terhapus!', 'Dokumen berhasil direset. Silakan unggah ulang.', 'success');
-                renderTabel();
-
-            } catch (err) {
-                console.error(err);
-                Swal.fire('Gagal!', 'Terjadi kesalahan saat menghapus data.', 'error');
             }
         }
 
